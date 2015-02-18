@@ -1,10 +1,12 @@
 
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
 import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
@@ -74,13 +76,15 @@ public class PdfBookPolisher {
 
     }
 
-    protected void run() throws IOException, COSVisitorException {
+    protected void run() throws Exception {
 
         PDDocument doc = PDDocument.load(inputFile);
 
+        PDDocument coverDoc = null;
         if (coverFile != null) {
-            PDDocument cover = PDDocument.load(coverFile);
-            doc.getDocumentCatalog().getPages().getKids().add(0, (PDPage) cover.getDocumentCatalog().getAllPages().get(0));
+            coverDoc = PDDocument.load(coverFile);
+            doc.getDocumentCatalog().getPages().getKids().add(0, (PDPage) coverDoc.getDocumentCatalog().getAllPages().get(0));
+            doc.getDocumentCatalog().getPages().updateCount();
         }
 
         ArrayList<LinkInfo> linkInfoList = new ArrayList<LinkInfo>();
@@ -92,9 +96,9 @@ public class PdfBookPolisher {
         }
 
         PDDocumentOutline outline = new PDDocumentOutline();
-        doc.getDocumentCatalog().setDocumentOutline(outline);
 
         double firstLevelX = linkInfoList.get(0).getRectangle().getX();
+
         for(int i = 0; i<linkInfoList.size(); i++) {
 
             LinkInfo linkInfo = linkInfoList.get(i);
@@ -120,7 +124,13 @@ public class PdfBookPolisher {
             outline.appendChild(outlineItem);
         }
 
+        doc.getDocumentCatalog().setDocumentOutline(outline);
+
         doc.save(outputFile);
+
+        // must be closed after doc.save!
+        if (coverDoc != null) coverDoc.close();
+
         System.out.println("Done.");
     }
 
