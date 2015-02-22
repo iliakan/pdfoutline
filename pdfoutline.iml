@@ -7,8 +7,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="org.apache.pdfbox:fontbox:1.8.8" level="project" />
-    <orderEntry type="library" name="org.apache.pdfbox:pdfbox:1.8.8" level="project" />
     <orderEntry type="library" name="args4j:args4j:2.0.29" level="project" />
+    <orderEntry type="library" name="fontbox-2.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="pdfbox-2.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="commons-logging-1.1.1" level="project" />
   </component>
 </module>

@@ -18,19 +18,17 @@ public class LinkInfoExtractor {
     protected PDDocument doc;
 
     protected int widthTolerance;
-    protected List allPages;
 
     public LinkInfoExtractor(PDDocument doc, int widthTolerance) {
         this.doc = doc;
         this.widthTolerance = widthTolerance;
-        this.allPages = doc.getDocumentCatalog().getAllPages();
     }
 
     public ArrayList<LinkInfo> extractPage(int pageNum) throws IOException {
 
 
         PDFTextStripperByArea stripper = new PDFTextStripperByArea();
-        PDPage page = (PDPage) allPages.get(pageNum);
+        PDPage page = (PDPage) doc.getPage(pageNum);
 
         List<PDAnnotation> annotations = page.getAnnotations();
 
@@ -52,13 +50,14 @@ public class LinkInfoExtractor {
             PDRectangle rect = link.getRectangle();
 
             //need to reposition link rectangle to match text space
-            float x = rect.getLowerLeftX() - this.widthTolerance;
             float y = rect.getUpperRightY();
-            float width = rect.getWidth() + this.widthTolerance;
             float height = rect.getHeight();
-            int rotation = page.findRotation();
+            float x = rect.getLowerLeftX() - this.widthTolerance;
+            float width = rect.getWidth() + this.widthTolerance;
+
+            int rotation = page.getRotation();
             if (rotation == 0) {
-                PDRectangle pageSize = page.findMediaBox();
+                PDRectangle pageSize = page.getMediaBox();
                 y = pageSize.getHeight() - y;
             } else if (rotation == 90) {
                 //do nothing
@@ -81,7 +80,7 @@ public class LinkInfoExtractor {
 
             PDAnnotationLink link = (PDAnnotationLink) annotation;
 
-            String urlText = stripper.getTextForRegion("" + (int)rect.getMinY()).trim();
+            String urlText = stripper.getTextForRegion("" + (int)rect.getMinY()).substring(1).trim();
             PDNamedDestination destination = (PDNamedDestination) link.getDestination();
 
             result.add(new LinkInfo(destination, rect, urlText));

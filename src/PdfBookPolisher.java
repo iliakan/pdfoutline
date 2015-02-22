@@ -1,10 +1,12 @@
 
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
 
-import org.apache.pdfbox.exceptions.COSVisitorException;
+import org.apache.pdfbox.cos.*;
+import org.apache.pdfbox.pdfwriter.COSWriter;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
@@ -74,13 +76,24 @@ public class PdfBookPolisher {
 
     }
 
-    protected void run() throws IOException, COSVisitorException {
+    protected void run() throws Exception {
 
         PDDocument doc = PDDocument.load(inputFile);
+        PDDocument coverDoc = null;
 
         if (coverFile != null) {
-            PDDocument cover = PDDocument.load(coverFile);
-            doc.getDocumentCatalog().getPages().getKids().add(0, (PDPage) cover.getDocumentCatalog().getAllPages().get(0));
+            coverDoc = PDDocument.load(coverFile);
+            PDPage coverPage = coverDoc.getPage(0);
+
+            // as described here
+            // http://mail-archives.apache.org/mod_mbox/pdfbox-users/201502.mbox/browser
+            doc.importPage(coverPage);
+            COSDictionary pages = (COSDictionary) doc.getDocumentCatalog().getCOSObject().getDictionaryObject(COSName.PAGES);
+            COSArray kids = (COSArray) pages.getDictionaryObject(COSName.KIDS);
+
+            COSBase last = kids.get(kids.size()-1);
+            kids.remove(last);
+            kids.add(0, last);
         }
 
         ArrayList<LinkInfo> linkInfoList = new ArrayList<LinkInfo>();
@@ -92,9 +105,9 @@ public class PdfBookPolisher {
         }
 
         PDDocumentOutline outline = new PDDocumentOutline();
-        doc.getDocumentCatalog().setDocumentOutline(outline);
 
         double firstLevelX = linkInfoList.get(0).getRectangle().getX();
+
         for(int i = 0; i<linkInfoList.size(); i++) {
 
             LinkInfo linkInfo = linkInfoList.get(i);
@@ -104,7 +117,7 @@ public class PdfBookPolisher {
                 PDOutlineItem outlineItem = new PDOutlineItem();
                 outlineItem.setTitle(linkInfo.getText());
                 outlineItem.setDestination(linkInfo.getDestination());
-                outline.getLastChild().appendChild(outlineItem);
+                outline.getLastChild().addLast(outlineItem);
 
                 if (i == linkInfoList.size()-1) break;
 
@@ -117,10 +130,16 @@ public class PdfBookPolisher {
             outlineItem.setTitle(linkInfo.getText());
             outlineItem.setDestination(linkInfo.getDestination());
 
-            outline.appendChild(outlineItem);
+            outline.addLast(outlineItem);
         }
 
+        doc.getDocumentCatalog().setDocumentOutline(outline);
         doc.save(outputFile);
+
+        // must close after the main doc(!)
+        // otherwise error
+        if (coverDoc != null) coverDoc.close();
+
         System.out.println("Done.");
     }
 
