@@ -28,22 +28,25 @@ public class PdfBookPolisher {
         //utility class
     }
 
-    @Option(name="--widthTolerance",usage="Sets a width tolerance to left/right sides of the links for text extraction")
-    public int widthTolerance = 10;
+    @Option(name = "--widthTolerance", usage = "Sets a width tolerance to left/right sides of the links for text extraction")
+    public int widthTolerance = 20;
 
-    @Option(name="--input", handler=FileOptionHandler.class, usage="Input pdf-file")
+    @Option(name = "--input", handler = FileOptionHandler.class, usage = "Input pdf-file")
     public File inputFile;
 
-    @Option(name="--output", handler=FileOptionHandler.class, usage="Output pdf-file")
+    @Option(name = "--output", handler = FileOptionHandler.class, usage = "Output pdf-file")
     public File outputFile;
 
-    @Option(name="--cover", handler=FileOptionHandler.class, usage="Cover pdf-file")
+    @Option(name = "--startLinkNumber", usage = "Skip first links when >0")
+    public int startLinkNumber = 0;
+
+    @Option(name = "--cover", handler = FileOptionHandler.class, usage = "Cover pdf-file")
     public File coverFile = null;
 
-    @Option(name="--pageFrom",usage="The first page to extract ToC")
+    @Option(name = "--pageFrom", usage = "The first page to extract ToC")
     public int pageFrom;
 
-    @Option(name="--pageTo",usage="The last page to extract ToC")
+    @Option(name = "--pageTo", usage = "The last page to extract ToC")
     public int pageTo;
 
     /**
@@ -88,7 +91,7 @@ public class PdfBookPolisher {
             COSDictionary pages = (COSDictionary) doc.getDocumentCatalog().getCOSObject().getDictionaryObject(COSName.PAGES);
             COSArray kids = (COSArray) pages.getDictionaryObject(COSName.KIDS);
 
-            COSBase last = kids.get(kids.size()-1);
+            COSBase last = kids.get(kids.size() - 1);
             kids.remove(last);
             kids.add(0, last);
         }
@@ -98,14 +101,14 @@ public class PdfBookPolisher {
         LinkInfoExtractor extractor = new LinkInfoExtractor(doc, widthTolerance);
 
         for (int pageNum = pageFrom; pageNum <= pageTo; pageNum++) {
-            linkInfoList.addAll( extractor.extractPage(pageNum) );
+            linkInfoList.addAll(extractor.extractPage(pageNum));
         }
 
         PDDocumentOutline outline = new PDDocumentOutline();
 
-        double firstLevelX = linkInfoList.get(0).getRectangle().getX();
+        double firstLevelX = linkInfoList.get(startLinkNumber).getRectangle().getX();
 
-        for(int i = 0; i<linkInfoList.size(); i++) {
+        for (int i = startLinkNumber; i < linkInfoList.size(); i++) {
 
             LinkInfo linkInfo = linkInfoList.get(i);
 
@@ -116,12 +119,12 @@ public class PdfBookPolisher {
                 outlineItem.setDestination(linkInfo.getDestination());
                 outline.getLastChild().addLast(outlineItem);
 
-                if (i == linkInfoList.size()-1) break;
+                if (i == linkInfoList.size() - 1) break;
 
                 linkInfo = linkInfoList.get(++i);
             }
 
-            if (i == linkInfoList.size()-1) break;
+            if (i == linkInfoList.size() - 1) break;
 
             PDOutlineItem outlineItem = new PDOutlineItem();
             outlineItem.setTitle(linkInfo.getText());

@@ -4,7 +4,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.apache.pdfbox.pdmodel.interactive.documentnavigation.destination.PDNamedDestination;
-import org.apache.pdfbox.util.PDFTextStripperByArea;
+import org.apache.pdfbox.text.PDFTextStripperByArea;
 
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
